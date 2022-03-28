@@ -56,17 +56,8 @@ set(SOURCE_FILES
         src/srv_config.cxx)
 
 set(TEST_SOURCE_FILES
-        tests/src/test_async_result.cxx
-        tests/src/test_buffer.cxx
-        tests/src/test_everything_together.cxx
-        tests/src/test_impls.cxx
-        tests/src/test_log_store.cxx
-        tests/src/test_logger.cxx
-        tests/src/test_ptr.cxx
         tests/src/test_runner.cxx
-        tests/src/test_scheduler.cxx
-        tests/src/test_serialization.cxx
-        tests/src/test_strfmt.cxx)
+        magma/test_mini_proj.cxx)
 
 set(HEADER_FILES
         include/asio_service.hxx
@@ -105,7 +96,9 @@ set(HEADER_FILES
         include/state_machine.hxx
         include/state_mgr.hxx
         include/strfmt.hxx
-        include/timer_task.hxx)
+        include/timer_task.hxx
+        
+        magma/wrapper.hxx)
 
 add_library(cornerstone
         ${SOURCE_FILES}
