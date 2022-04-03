@@ -1,6 +1,24 @@
-# cornerstone
+# magma - IoT mini project
 
-![Build Status](https://github.com/datatechnology/cornerstone/workflows/Build%20and%20test/badge.svg)
+
+To see cloud-side changes go to: [iotproj.deadcat.xyz](iotproj.deadcat.xyz)
+
+## Common Issues
+
+- clean the working directory after each run to avoid old logs causing issues (stor1, log1.log, etc)
+- ensure curl is installed and internet is reachable by running `curl google.com` in the shell
+
+## Build and run
+
+```bash
+git submodule update --init --recursive
+mkdir build && cd build
+cmake ..
+cmake --build .
+./testr
+```
+
+# forked from cornerstone
 
 A very lightweight but complete Raft Consensus C++ implementation, the [original implementation](https://github.com/andy-yx-chen/cornerstone) was published by [Andy Chen](https://github.com/andy-yx-chen), as he agrees,  we re-organize his source code, and republish under the same license.
 
@@ -48,17 +66,3 @@ You most likely should start with test_everything_together.cxx, under test/src f
 - how to use the core algorithm
 - how to send logs to cluster
 - ext: how to use asio_service
-
-## Build and run
-
-```bash
-git submodule update --init --recursive
-mkdir build && cd build
-cmake ..
-cmake --build .
-./testr
-```
-
-## Contact Us
-
-For any questions, please contact [Us](mailto:andy.yx.chen@outlook.com)

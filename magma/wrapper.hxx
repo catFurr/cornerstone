@@ -113,13 +113,17 @@ class localDB {
             return NULL;
         }
 
-        void setValue (std::string key, int value) {
+        void setValue (std::string key, int32 value) {
             m[key] = value;
+            // save to the cloud too
+            const char* cmd = lstrfmt("curl --location 'https://iotproj.deadcat.xyz' --request POST --header 'Content-Type: text/plain' --data-raw '%d'").fmt(value);
+            std::system(cmd);
         }
     
     private:
         std::map<std::string, int> m;
 };
+
 
 class magma;
 void run_raft_instance_with_asio(bool enable_prevote, const std::vector<ptr<srv_config>>& cluster, magma* magmaptr);
@@ -138,7 +142,7 @@ class magma {
             std::cout << "waiting for leader election..." << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(1));
 
-            client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:%d").fmt(9000 + self_id));
+            client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:%d").fmt(9000 + self_id)); // TODO
         };
         ~magma() {
             stop_cv1.notify_all();
@@ -146,6 +150,7 @@ class magma {
             asio_svc_->stop();
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
+            // TODO
             // std::remove(sstrfmt("log%d.log").fmt(self_id));
             // cleanup(sstrfmt("store%d").fmt(self_id));
             // rmdir(sstrfmt("store%d").fmt(self_id));
@@ -177,15 +182,15 @@ class magma {
 
                 if (!rsp->get_accepted()) {
                     // we need to message the leader instead!
-                    client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:900%d").fmt(rsp->get_dst()));
+                    client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:900%d").fmt(rsp->get_dst())); // TODO
                     ptr<req_msg> msg = cs_new<req_msg>(0, msg_type::client_request, 0, 1, 0, 0, 0);
                     bufptr buf = buffer::alloc(100);
                     buf->put(data);
                     buf->pos(0);
                     msg->log_entries().push_back(cs_new<log_entry>(0, std::move(buf)));
-                    rpc_handler handler = (rpc_handler)([](ptr<resp_msg>& rsp1, const ptr<rpc_exception>&) -> void {
-                        if (!rsp1->get_accepted()) {
-                            std::cout << "Error in sending message! " << std::endl;
+                    rpc_handler handler = (rpc_handler)([](ptr<resp_msg>& rsp1, const ptr<rpc_exception>& err_) -> void {
+                        if (err_ || !rsp1->get_accepted()) {
+                            std::cout << "Error in sending message!" << std::endl;
                         }
                     });
                     client->send(msg, handler);
@@ -263,13 +268,14 @@ public:
 
 public:
     virtual void on_event(raft_event event) override {
+        // TODO save our state; to show incase we are leader
         switch (event)
         {
         case raft_event::become_follower:
             // std::cout << srv_id_ << " becomes a follower" << std::endl;
             break;
         case raft_event::become_leader:
-            std::cout << srv_id_ << " becomes a leader" << std::endl;
+            // std::cout << srv_id_ << " becomes a leader" << std::endl;
             break;
         case raft_event::logs_catch_up:
             // std::cout << srv_id_ << " catch up all logs" << std::endl;
@@ -284,7 +290,7 @@ private:
 
 void run_raft_instance_with_asio(bool enable_prevote, const std::vector<ptr<srv_config>>& cluster, magma* magmaptr ) {
     ptr<logger> l(cs_new<fs_logger>(sstrfmt("log%d.log").fmt(magmaptr->self_id)));
-    ptr<rpc_listener> listener(asio_svc_->create_rpc_listener((ushort)(9000 + magmaptr->self_id), l));
+    ptr<rpc_listener> listener(asio_svc_->create_rpc_listener((ushort)(9000 + magmaptr->self_id), l)); // TODO
     ptr<state_machine> smachine(cs_new<echo_state_machine>(&magmaptr->local_db));
     ptr<state_mgr> smgr(cs_new<simple_state_mgr>(magmaptr->self_id, cluster));
     raft_params* params(new raft_params());
