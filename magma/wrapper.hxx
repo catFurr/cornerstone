@@ -131,6 +131,7 @@ class magma {
     public:
         magma(const std::vector<ptr<srv_config>>& cluster, const int32 self_id) {
             magma::self_id = self_id;
+            magma::_cluster = cluster;
             asio_svc_ = cs_new<asio_service>();
             std::thread t1([&cluster, this]{
                 run_raft_instance_with_asio(false, cluster, this);
@@ -142,7 +143,8 @@ class magma {
             std::cout << "waiting for leader election..." << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(1));
 
-            client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:%d").fmt(9000 + self_id)); // TODO
+            // client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:%d").fmt(9000 + self_id)); // Single machine
+            client = asio_svc_->create_client("tcp://127.0.0.1:9000"); // Multiple machines
         };
         ~magma() {
             stop_cv1.notify_all();
@@ -182,7 +184,12 @@ class magma {
 
                 if (!rsp->get_accepted()) {
                     // we need to message the leader instead!
-                    client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:900%d").fmt(rsp->get_dst())); // TODO
+                    // client = asio_svc_->create_client(sstrfmt("tcp://127.0.0.1:900%d").fmt(rsp->get_dst())); // Single machine
+                    for (int i = 0; i < _cluster.size(); i++) {
+                        if ((*(_cluster[i])).get_id() == rsp->get_dst()) {
+                            client = asio_svc_->create_client((*(_cluster[i])).get_endpoint()); // Multiple machine
+                        }
+                    }
                     ptr<req_msg> msg = cs_new<req_msg>(0, msg_type::client_request, 0, 1, 0, 0, 0);
                     bufptr buf = buffer::alloc(100);
                     buf->put(data);
@@ -208,6 +215,7 @@ class magma {
     public:
         int32 self_id;
         localDB local_db;
+        std::vector<ptr<srv_config>> _cluster;
 
 };
 
@@ -289,8 +297,9 @@ private:
 
 
 void run_raft_instance_with_asio(bool enable_prevote, const std::vector<ptr<srv_config>>& cluster, magma* magmaptr ) {
-    ptr<logger> l(cs_new<fs_logger>(sstrfmt("log%d.log").fmt(magmaptr->self_id)));
-    ptr<rpc_listener> listener(asio_svc_->create_rpc_listener((ushort)(9000 + magmaptr->self_id), l)); // TODO
+    ptr<logger> l(cs_new<fs_logger>("magmalog.log"));
+    // ptr<rpc_listener> listener(asio_svc_->create_rpc_listener((ushort)(9000 + magmaptr->self_id), l)); // Single machine
+    ptr<rpc_listener> listener(asio_svc_->create_rpc_listener((ushort)(9000), l)); // Multiple machine
     ptr<state_machine> smachine(cs_new<echo_state_machine>(&magmaptr->local_db));
     ptr<state_mgr> smgr(cs_new<simple_state_mgr>(magmaptr->self_id, cluster));
     raft_params* params(new raft_params());
