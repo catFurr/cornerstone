@@ -41,14 +41,16 @@
 // __decl_test__(log_store_compact_random);
 // __decl_test__(raft_server_with_asio);
 // __decl_test__(raft_server_with_prevote);
-__decl_test__(mini_proj);
+// __decl_test__(mini_proj);
+void test_mini_proj(int argc, char* argv[]);
 
 int main(int argc, char* argv[]) {
-    const char* test = "*";
-    if (argc == 2) {
-        test = argv[1];
-    }
-    test = "mini_proj";
+    // const char* test = "*";
+    // if (argc == 2) {
+    //     test = argv[1];
+    // }
+    // test = "mini_proj";
+    test_mini_proj(argc, argv);
 
     // __run_test__(async_result)
     // __run_test__(strfmt)
@@ -65,6 +67,6 @@ int main(int argc, char* argv[]) {
     // __run_test__(raft_server)
     // __run_test__(raft_server_with_asio)
     // __run_test__(raft_server_with_prevote)
-    __run_test__(mini_proj)
+    // __run_test__(mini_proj)
     return 0;
 }
